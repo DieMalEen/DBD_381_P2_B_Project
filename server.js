@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const Product = require('./models/products');
 const User = require('./models/users');
 const Order = require('./models/orders');
-const Review = require('./models/categories');
+const Caregory = require('./models/categories');
 
 const app = express();
 app.use(express.json());
@@ -23,83 +23,46 @@ app.get("/", (req, res) => {
 });
 
 // Add Routes
-// Add sample products
-app.get("/add-product", async (req, res) => {
+// Add product
+// This is used in stress testing
+app.post("/add-product", async (req, res) => {
+  console.log("Received add-product request:", req.body);
   try {
-    const sample_Product = new Product({
-      product_id: "P2002",
-      product_name: "Bluetooth Keyboard",
-      product_price: 499.99,
-      product_category: "60c72b2f9b1e8b001c9d4e9a", // Replace with actual category _id
-      product_quantity: 30,
-      image_url: "keyboard1.jpg",
-      reviews: []
-    });
-    const saved = await sample_Product.save();
+    const productData = req.body;
+    const newProduct = new Product(productData);
+    const saved = await newProduct.save();
     res.json(saved);
   } catch (err) {
+    console.error("Error saving product:", err);
     res.status(400).json({ error: err.message });
   }
 });
 
-// Add a sample user
-app.get("/add-user", async (req, res) => {
-  const sample_User = new User({
-    user_id: "9001",
-    user_name: "Alice M",
-    user_email: "alice@example.com",
-    user_role: "seller",
-    user_address: {
-      city: "Pretoria",
-      country: "South Africa"
-    }
-  });
+// Add user
+app.post("/add-user", async (req, res) => {
+  console.log("Received add-user request:", req.body);
   try {
-    const savedUser = await sample_User.save();
+    const userData = req.body;
+    const newUser = new User(userData);
+    const savedUser = await newUser.save();
     res.json(savedUser);
-  } catch (err){
-    res.status(400).json({error: err.message});
+  } catch (err) {
+    console.error("Error saving user:", err);
+    res.status(400).json({ error: err.message });
   }
-
 });
 
-// Add a sample order
-app.get("/add-order", async (req, res) => {
+// Add order
+app.post("/add-order", async (req, res) => {
+  console.log("Received add-order request:", req.body);
   try {
-    const sample_Order = new Order({
-      order_id: 8001,
-      customer: "60c72b2f9b1e8b001c9d4e9b", // Replace with actual user ObjectId
-      products: [
-        {
-          product: "60c72b2f9b1e8b001c9d4e9c", // Replace with actual product ObjectId
-          quantity: 2,
-          price: 499.99
-        }
-      ],
-      total_amount: 999.98
-    });
-
-    const savedOrder = await sample_Order.save();
+    const orderData = req.body;
+    const newOrder = new Order(orderData);
+    const savedOrder = await newOrder.save();
     res.json(savedOrder);
   } catch (err) {
+    console.error("Error saving order:", err);
     res.status(400).json({ error: err.message });
-  }
-});
-
-// Add a review for a product
-app.get('/add-review', async (req, res) => {
-  const sample_Review = new Review({
-    review_id: "R5001",
-    product_id: "P2002",
-    user_id: "U9001",
-    rating: 5,
-    comment: "Absolutely love this keyboard!"
-  });
-  try{
-    const savedReview = await sample_Review.save();
-    res.json(savedReview);
-  } catch(err) {
-    res.status(400).json({error: err.message});
   }
 });
 
@@ -107,11 +70,11 @@ app.get('/add-review', async (req, res) => {
 // Delete a product by ID
 app.delete("/delete-product/:id", async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) {
+    const deleted = await Product.deleteOne({ product_id: req.params.id });
+    if (deleted.deletedCount === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
-    res.json({ message: "Product deleted successfully" });
+    res.json({ message: "Deleted successfully" });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -143,41 +106,33 @@ app.delete("/delete-order/:id", async (req, res) => {
   }
 });
 
-// Delete a review by ID
-app.delete('/delete-review/:id', async (req, res) => {
-  try {
-    const review = await Review.findByIdAndDelete(req.params.id);
-    if (!review) {
-      return res.status(404).json({ error: "Review not found" });
-    }
-    res.json({ message: "Review deleted successfully" });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
 // Search Routes
-// Search product by name
-app.get("/search-product", async (req, res) => {
+// Shows products based on id
+app.get("/search-product/:id", async (req, res) => {
   try {
-    const query = req.query.name;
-    const products = await Product.find({ product_name: new RegExp(query, 'i') });
-    res.json(products);
+    const productId = req.params.id;
+    const product = await Product.findOne({ product_id: productId });
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(product);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // Search users by role
-app.get("/search-user", async (req, res) => {
+app.get("/search-users/:role", async (req, res) => {
   try {
-    const role = req.query.role;
+    const role = req.params.role; // Use params instead of query
     const users = await User.find({ user_role: role });
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-})
+});
 
 // Join Routes
 // Get orders with full user and product details
@@ -192,13 +147,26 @@ app.get("/orders/details", async (req, res) => {
   }
 });
 
-// Get products with category and user reviews
-app.get("/products/details", async (req, res) => {
+// RESET
+app.get("/reset-database", async (req, res) => {
   try {
-    const products = await Product.find()
-      .populate("product_category")
-      .populate("reviews.user");
-    res.json(products);
+    await mongoose.connection.dropDatabase();
+    res.send("Database dropped successfully. Relaunch the server to repopulate.");
+  } catch (err) {
+    res.status(500).json({ error: "Failed to drop database: " + err.message });
+  }
+});
+
+// Cleanup route to delete all collections (use with caution in prod)
+app.delete("/cleanup", async (req, res) => {
+  try {
+    await Promise.all([
+      Product.deleteMany({}),
+      User.deleteMany({}),
+      Order.deleteMany({}),
+      Category.deleteMany({})
+    ]);
+    res.status(200).send("Database cleaned");
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

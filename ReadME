@@ -1,1 +1,1 @@
-npm install express mongoose artillery
+npm install express mongoose artillery fs

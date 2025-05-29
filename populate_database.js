@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
-const Product = require('./models/products');
-const User = require('./models/users');
-const Order = require('./models/orders');
-const Category = require('./models/categories');
-const Review = require('./models/reviews');
+const Product = require('./models/products.js');
+const User = require('./models/users.js');
+const Order = require('./models/orders.js');
+const Category = require('./models/categories.js');
 
-const MONGO_URI = "mongodb://localhost:27017/ecommerce"; // Update if using replica set URI
+const MONGO_URI = "mongodb://localhost:27100,localhost:27101,localhost:27102/ecommerce?replicaSet=rs0"; // Update if using replica set URI
 
 async function populate() {
   try {
@@ -65,23 +64,10 @@ async function populate() {
           quantity: 1 + i,
           price: savedProducts[i % 10].product_price
         }],
-        totalAmount: (1 + i) * savedProducts[i % 10].product_price
+        total_amount: (1 + i) * savedProducts[i % 10].product_price
       }));
     }
-    const savedOrders = await Order.insertMany(orders);
-
-    // --- Reviews ---
-    const reviews = [];
-    for (let i = 1; i <= 10; i++) {
-      reviews.push(new Review({
-        review_id: `R100${i}`,
-        product: savedProducts[i % 10]._id,
-        user: savedUsers[i % 10]._id,
-        rating: (i % 5) + 1,
-        comment: `This is review ${i} for product ${i % 10}`
-      }));
-    }
-    await Review.insertMany(reviews);
+    const savedOrders = await Product.insertMany(orders);
 
     console.log("Database populated with 10 items each.");
     await mongoose.disconnect();

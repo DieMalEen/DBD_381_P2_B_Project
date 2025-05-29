@@ -1,0 +1,44 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm-up Phase"
+    - duration: 30
+      arrivalRate: 15
+      name: "Moderate Load Phase"
+    - duration: 30
+      arrivalRate: 30
+      name: "High Load Spike"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  processor: "./function.js"
+
+scenarios:
+  - name: "Product Lifecycle Stress Test"
+    flow:
+      - function: "generateProductId"
+      - post:
+          url: "/add-product"
+          json:
+            product_id: "{{ productId }}"
+            product_name: "Load Test Product"
+            product_price: 199.99
+            product_quantity: 10
+            image_url: "test-load.jpg"
+      - get:
+          url: "/search-product/{{ productId }}"
+      - delete:
+          url: "/delete-product/{{ productId }}"
+
+plugins:
+  expect: {}
+
+functions:
+  generateProductId: |
+    function (userContext, events, done) {
+      const uuid = Math.random().toString(36).substring(2, 10).toUpperCase();
+      userContext.vars.productId = `P_STRESS_${uuid}`;
+      return done();
+    }
