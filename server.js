@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const Product = require('./models/products');
 const User = require('./models/users');
 const Order = require('./models/orders');
-const Review = require('./models/reviews');
+const Review = require('./models/categories');
 
 const app = express();
 app.use(express.json());
