@@ -1,7 +1,5 @@
 // products Schema
 const mongoose = require('mongoose');
-const categories = require('./categories');
-const users = require('./users');
 
 const ProductSchema = new mongoose.Schema({
     product_id: {
@@ -27,7 +25,7 @@ const ProductSchema = new mongoose.Schema({
 
     product_category: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: categories,
+        ref: 'categories',
     },
 
     product_quantity: {
@@ -36,14 +34,14 @@ const ProductSchema = new mongoose.Schema({
     },
 
     image_url: {
-        type: string,
+        type: String,
         default: "No image provided"
     },
 
     reviews: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: users,
+            ref: 'users',
             required: true
         },
         type: String,

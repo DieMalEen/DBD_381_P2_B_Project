@@ -9,3 +9,6 @@ mongo-replica/rs3/*
 !mongo-replica/rs1/.gitkeep
 !mongo-replica/rs2/.gitkeep
 !mongo-replica/rs3/.gitkeep
+
+# Ignore .json files
+*.json
